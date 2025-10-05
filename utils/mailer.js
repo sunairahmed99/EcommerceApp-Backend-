@@ -1,20 +1,28 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config({ quiet: true });
 
-const resend = new Resend(process.env.resendkey);
+// Nodemailer transporter using Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER, // aapka Gmail
+    pass: process.env.GMAIL_PASS, // App Password (16-char password)
+  },
+});
 
-async function sendMail({ to, subject, text, html }) {
+// sendMail function
+async function sendMail({ to, subject, text }) {
   try {
-    const data = await resend.emails.send({
-      from: process.env.FROM_EMAIL,
+    const info = await transporter.sendMail({
+      from: process.env.GMAIL_USER,
       to,
       subject,
       text,
-      html,
     });
-    console.log("✅ Email sent via Resend:", data);
-    return data;
+
+    console.log("✅ Email sent via Gmail:", info.response);
+    return info;
   } catch (error) {
     console.error("❌ Email send failed:", error.message);
     throw error;
