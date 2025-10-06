@@ -1,6 +1,7 @@
-import { MailtrapClient } from "mailtrap";
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
+import { MailtrapTransport } from "mailtrap";
+
 dotenv.config();
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -8,17 +9,32 @@ const isProduction = process.env.NODE_ENV === "production";
 let sendMail;
 
 if (isProduction) {
-  console.log("🚀 Using Mailtrap API (Production)");
-  const client = new MailtrapClient({ token: process.env.MAILTRAP_TOKEN });
+  console.log("🚀 Using Mailtrap (Production)");
+
+  // Mailtrap Transport Setup
+  const transport = nodemailer.createTransport(
+    MailtrapTransport({
+      token: process.env.MAILTRAP_TOKEN, // API token from your Mailtrap account
+      testInboxId: 4017448, // replace with your own Sandbox ID
+    })
+  );
 
   sendMail = async ({ to, subject, text }) => {
     try {
-      await client.send({
-        from: { email: "no-reply@ecommerce.com", name: "E-Commerce App" },
-        to: [{ email: to }],
+      const sender = {
+        address: "sunairahmed9908@example.com",
+        name: "E-Commerce App",
+      };
+
+      await transport.sendMail({
+        from: sender,
+        to: [to],
         subject,
         text,
+        category: "Integration Test",
+        sandbox: true, // true = sends to sandbox inbox
       });
+
       console.log("✅ Email sent successfully via Mailtrap API");
     } catch (err) {
       console.error("❌ Email send failed:", err.message);
@@ -26,6 +42,7 @@ if (isProduction) {
   };
 } else {
   console.log("🧪 Using Gmail (Local)");
+
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
